@@ -35,6 +35,11 @@
         
         .durum-bilgi { font-size: 13px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.05); color: #00bcd4; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3); }
         h3 { color: #fff; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 0; display:flex; align-items:center; gap:8px;}
+
+        /* --- YENİ EKLENEN: TAM EKRAN RAPOR PENCERESİ (MODAL) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .modal-icerik { max-width: 100%; max-height: 80vh; border-radius: 10px; object-fit: contain; }
+        .modal-kapat-btn { margin-top: 25px; background-color: #f44336; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; max-width: 300px; }
     </style>
 </head>
 <body>
@@ -63,6 +68,11 @@
         <h3><i class="fas fa-capsules" style="color:#3f51b5;"></i> İlaç Sayaçları</h3>
         <div id="ilacListesi"><span style="color:#888; font-size:14px;">Lütfen yukarıdan hasta seçin.</span></div>
     </div>
+</div>
+
+<div id="raporModal" class="modal">
+    <div id="modalIcerikAlani" style="width:100%; height:80vh; display:flex; justify-content:center; align-items:center;"></div>
+    <button class="modal-kapat-btn" onclick="modalKapat()"><i class="fas fa-times"></i> Kapat ve Geri Dön</button>
 </div>
 
 <script>
@@ -117,7 +127,6 @@
         rL.innerHTML = filtrelenmisRaporlar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait rapor bulunamadı.</div>' : '';
         
         filtrelenmisRaporlar.forEach((r) => {
-            // Gerçek index'i bulmak için (eğer ileride lazım olursa diye orijinal index'i obje içinden çekmek gerekir, ancak silme yapmadığımız için direkt objeyi paslayabiliriz)
             const globalIndex = sistemVerisi.raporlar.indexOf(r);
             rL.innerHTML += `
                 <div class="liste-kutu" style="border-left: 5px solid #00bcd4;">
@@ -152,21 +161,44 @@
         });
     }
 
+    // --- YENİ EKLENEN: MODAL (PENCERE) FONKSİYONLARI ---
     function raporGoruntule(globalIndex) {
-        const r = sistemVerisi.raporlar[globalIndex]; const p = window.open("");
-        if(r.mimeType.includes("image")) p.document.write(`<img src="${r.veri}" style="width:100%; height:auto;">`);
-        else if (r.mimeType.includes("pdf")) p.document.write(`<iframe src="${r.veri}" style="width:100%; height:100vh; border:none;"></iframe>`);
+        const r = sistemVerisi.raporlar[globalIndex]; 
+        const modal = document.getElementById('raporModal');
+        const icerikAlani = document.getElementById('modalIcerikAlani');
+        
+        icerikAlani.innerHTML = ''; // Önceki içeriği temizle
+        
+        if(r.mimeType.includes("image")) {
+            icerikAlani.innerHTML = `<img src="${r.veri}" class="modal-icerik">`;
+        } else if (r.mimeType.includes("pdf")) {
+            icerikAlani.innerHTML = `<iframe src="${r.veri}" style="width:100%; height:100%; border:none; border-radius:10px;"></iframe>`;
+        }
+        
+        modal.style.display = 'flex'; // Pencereyi göster
     }
 
+    function modalKapat() {
+        document.getElementById('raporModal').style.display = 'none'; // Pencereyi gizle
+        document.getElementById('modalIcerikAlani').innerHTML = ''; // RAM'i temizle
+    }
+
+    // --- GÜNCELLENEN: PAYLAŞIM FONKSİYONU ---
     async function raporPaylas(globalIndex) {
         const r = sistemVerisi.raporlar[globalIndex];
         try {
             const res = await fetch(r.veri); const blob = await res.blob();
             const dosya = new File([blob], r.dosyaAdi, { type: r.mimeType });
+            
             if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
                 await navigator.share({ title: `${r.hastaAdi} Raporu`, text: `Belge Ektedir.`, files: [dosya] });
-            } else alert("Cihazınız doğrudan dosya paylaşımını desteklemiyor.");
-        } catch(e) { alert("Paylaşım sırasında hata oluştu."); }
+            } else {
+                alert("Cihazınız bu paylaşım formatını desteklemiyor.");
+            }
+        } catch(e) { 
+            // Kullanıcı vazgeçtiğinde fırlatılan hatayı gizliyoruz. Sadece konsola yazar.
+            console.log("Paylaşım iptal edildi veya tamamlandı."); 
+        }
     }
 </script>
 </body>
