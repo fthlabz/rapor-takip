@@ -24,9 +24,12 @@
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
         button:active { transform: scale(0.98); }
         .btn-mavi { background-color: #3f51b5; } .btn-turkuaz { background-color: #00bcd4; }
+        
         .btn-kirmizi { background-color: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid rgba(244, 67, 54, 0.3); padding: 10px; font-size: 14px; margin-top: 10px; }
+        .btn-guncelle { background-color: rgba(63, 81, 181, 0.1); color: #8c9eff; border: 1px solid rgba(63, 81, 181, 0.3); padding: 10px; font-size: 14px; margin-top: 10px; margin-right: 5px; }
+        
         .durum-bilgi { font-size: 13px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.05); color: #00bcd4; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3); }
-        .yonetim-satir { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .yonetim-satir { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); gap: 10px;}
         .yonetim-satir:last-child { border-bottom: none; }
         
         /* PIN Ekranı Stilleri */
@@ -38,14 +41,14 @@
 <body>
 
 <div class="nav-bar">
-    <a href="index.html" class="nav-btn nav-active"><i class="fas fa-user-shield"></i> Yönetici</a>
-    <a href="takip.html" class="nav-btn nav-passive"><i class="fas fa-chart-line"></i> Hasta Takibi</a>
+    <a href="index.html" class="nav-btn nav-active"><i class="fas fa-user-shield"></i> Yönetici Paneli</a>
+    <a href="takip.html" class="nav-btn nav-passive"><i class="fas fa-chart-line"></i> Hasta Takibi'ne Git</a>
 </div>
 
 <div id="pinEkrani">
     <div class="kart pin-kutu">
         <h2 style="margin-top:0;"><i class="fas fa-lock" style="color:#00bcd4; font-size:30px; margin-bottom:10px; display:block;"></i> Yetkili Girişi</h2>
-        <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Kayıt ekleme ve silme paneline erişmek için PIN kodunuzu giriniz.</p>
+        <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Kayıt ekleme, silme ve tarih yenileme paneline erişmek için PIN kodunuzu giriniz.</p>
         
         <input type="password" id="pinGirdisi" placeholder="PIN Kodu" style="text-align:center; letter-spacing:8px; font-size:20px; font-weight:bold; margin-bottom:15px;" inputmode="numeric" maxlength="4">
         
@@ -82,19 +85,16 @@
         </div>
 
         <div class="kart">
-            <h2 style="text-align:center; font-size:18px; margin-top:0; color:#f44336;"><i class="fas fa-trash-alt"></i> Veri Silme Yönetimi</h2>
+            <h2 style="text-align:center; font-size:18px; margin-top:0; color:#f44336;"><i class="fas fa-sliders-h"></i> Veri Yönetimi</h2>
             <h3 style="font-size:15px; color:#00bcd4; border-bottom:1px solid #333; padding-bottom:5px;">Raporlar</h3>
             <div id="silRaporListesi" style="margin-bottom: 20px;"></div>
-            <h3 style="font-size:15px; color:#3f51b5; border-bottom:1px solid #333; padding-bottom:5px;">İlaçlar</h3>
+            <h3 style="font-size:15px; color:#3f51b5; border-bottom:1px solid #333; padding-bottom:5px;">İlaçlar (Tarih Yenile / Sil)</h3>
             <div id="silIlacListesi"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // HAYALET KİLİT MİMARİSİ
-    // ==========================================
     const sifreliKasa = "U2FsdGVkX18YZOh/CEC1BZdGmmN8qEbU7T9VH7rWp2xupmq48rGl09lbWTleQG3CoVl+dKuwnc2nUinI50/Q2A=="; 
     const gizliPin = "1453"; 
     const githubKullaniciAdi = "fthlabz"; const githubRepoAdi = "rapor-takip"; const dosyaYolu = "data.json";
@@ -103,15 +103,12 @@
 
     function tokenCoz() { try { return CryptoJS.AES.decrypt(sifreliKasa, gizliPin).toString(CryptoJS.enc.Utf8); } catch(e) { return ""; } }
 
-    // --- PIN KONTROL SİSTEMİ ---
     const yoneticiPin = "1453";
 
     window.onload = function() {
-        // Oturum daha önce açılmış mı kontrol et
         if(sessionStorage.getItem('yoneticiIzni') === 'onaylandi') {
             sistemiBaslat();
         } else {
-            // Açılmadıysa kilit ekranını göster
             document.getElementById('pinEkrani').style.display = 'block';
         }
     };
@@ -128,21 +125,16 @@
         }
     }
 
-    // --- SİSTEMİ BAŞLAT (PIN DOĞRUYSA ÇALIŞIR) ---
     function sistemiBaslat() {
         document.getElementById('anaIcerik').style.display = 'flex';
-        
-        // Tarih formatlayıcıyı aktifleştir
         const b = new Date();
         const gun = String(b.getDate()).padStart(2, '0');
         const ay = String(b.getMonth() + 1).padStart(2, '0');
         const yil = String(b.getFullYear()).slice(-2);
         tarihInput.value = `${gun}/${ay}/${yil}`;
-        
         githubVerisiniCek();
     }
 
-    // --- OTOMATİK TARİH FORMATLAYICI ---
     const tarihInput = document.getElementById('baslangicTarihi');
     tarihInput.addEventListener('input', function(e) {
         let deger = e.target.value.replace(/\D/g, ''); 
@@ -259,21 +251,59 @@
         document.getElementById('ilacHastaAdi').value = ''; document.getElementById('ilacAdi').value = ''; document.getElementById('kutuAdet').value = ''; document.getElementById('kutuSayisi').value = '1'; document.getElementById('gunlukDoz').value = '';
     }
 
+    // --- YENİ EKLENEN: TARİH GÜNCELLEME SİSTEMİ ---
+    function ilacTarihGuncelle(i) {
+        const ilac = sistemVerisi.ilaclar[i];
+        
+        // Önceki başlangıç tarihini GG/AA/YY formatına çevir
+        const mevcutTarih = new Date(ilac.baslangicTarihi);
+        const g = String(mevcutTarih.getDate()).padStart(2, '0');
+        const a = String(mevcutTarih.getMonth() + 1).padStart(2, '0');
+        const y = String(mevcutTarih.getFullYear()).slice(-2);
+        const eskiFormat = `${g}/${a}/${y}`;
+
+        // Kullanıcıdan yeni tarihi iste
+        const yeniTarihGirdisi = prompt(`"${ilac.adi}" ilacını ECZANEDEN YENİ ALDIĞINIZ tarihi giriniz.\n(GG/AA/YY formatında, aralara / koyarak):`, eskiFormat);
+
+        if (yeniTarihGirdisi && yeniTarihGirdisi.length === 8 && yeniTarihGirdisi.includes('/')) {
+            const parcalar = yeniTarihGirdisi.split('/');
+            if (parcalar.length === 3) {
+                const yeniGun = parseInt(parcalar[0]);
+                const yeniAy = parseInt(parcalar[1]) - 1;
+                const yeniYil = parseInt(parcalar[2]) + 2000;
+                
+                // İlacın veritabanındaki başlangıç tarihini direkt değiştir
+                ilac.baslangicTarihi = new Date(yeniYil, yeniAy, yeniGun, 12, 0, 0).toISOString();
+                
+                githubVerisiniYaz(`"${ilac.adi}" hak ediş tarihi güncellendi`);
+            } else {
+                alert("Lütfen tarihi GG/AA/YY şeklinde doğru yazdığınızdan emin olun.");
+            }
+        } else if(yeniTarihGirdisi !== null) {
+            alert("Lütfen tarihi GG/AA/YY şeklinde eksiksiz giriniz.");
+        }
+    }
+
     function silmeListeleriniGuncelle() {
         const rList = document.getElementById('silRaporListesi');
         rList.innerHTML = sistemVerisi.raporlar.length === 0 ? '<span style="color:#888; font-size:12px;">Kayıt yok.</span>' : '';
         sistemVerisi.raporlar.forEach((r, i) => {
             rList.innerHTML += `<div class="yonetim-satir">
-                <div><strong style="color:#fff;">${r.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${r.tur}</span></div>
+                <div style="flex:1;"><strong style="color:#fff;">${r.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${r.tur}</span></div>
                 <button class="btn-kirmizi" style="width:auto; margin:0;" onclick="raporSil(${i})"><i class="fas fa-trash"></i></button>
             </div>`;
         });
+        
         const iList = document.getElementById('silIlacListesi');
         iList.innerHTML = sistemVerisi.ilaclar.length === 0 ? '<span style="color:#888; font-size:12px;">Kayıt yok.</span>' : '';
         sistemVerisi.ilaclar.forEach((ilac, i) => {
+            // İlaç satırına "Tarih Yenile" butonu eklendi
             iList.innerHTML += `<div class="yonetim-satir">
-                <div><strong style="color:#fff;">${ilac.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${ilac.adi}</span></div>
-                <button class="btn-kirmizi" style="width:auto; margin:0;" onclick="ilacSil(${i})"><i class="fas fa-trash"></i></button>
+                <div style="flex:1;"><strong style="color:#fff;">${ilac.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${ilac.adi}</span></div>
+                <div style="display:flex;">
+                    <button class="btn-guncelle" style="width:auto; margin:0 5px 0 0;" onclick="ilacTarihGuncelle(${i})" title="Yeni Tarih Gir"><i class="fas fa-calendar-day"></i> Tarih Yenile</button>
+                    <button class="btn-kirmizi" style="width:auto; margin:0;" onclick="ilacSil(${i})" title="Sil"><i class="fas fa-trash"></i></button>
+                </div>
             </div>`;
         });
     }
