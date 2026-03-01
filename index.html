@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sağlık Yönetimi | Kayıt & Silme</title>
+    <title>Sağlık Yönetimi | Yönetici Girişi</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
         .kart { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); box-sizing: border-box; }
         .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { color: #ffffff; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
-        input[type="text"], input[type="number"], input[type="file"], input[type="tel"] { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px; width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
+        input[type="text"], input[type="number"], input[type="file"], input[type="tel"], input[type="password"] { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px; width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
         input:focus { outline: none; border-color: #00bcd4; box-shadow: 0 0 10px rgba(0, 188, 212, 0.5); }
         .row { display: flex; gap: 10px; } .row .input-group { flex: 1; }
         button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: #ffffff; margin-top: 5px; }
@@ -28,47 +28,66 @@
         .durum-bilgi { font-size: 13px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.05); color: #00bcd4; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3); }
         .yonetim-satir { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .yonetim-satir:last-child { border-bottom: none; }
+        
+        /* PIN Ekranı Stilleri */
+        #pinEkrani { display: none; width: 100%; max-width: 350px; margin-top: 15vh; }
+        #anaIcerik { display: none; width: 100%; }
+        .pin-kutu { text-align: center; border-top: 4px solid #00bcd4; }
     </style>
 </head>
 <body>
 
 <div class="nav-bar">
-    <a href="index.html" class="nav-btn nav-active"><i class="fas fa-edit"></i> Kayıt & Silme</a>
+    <a href="index.html" class="nav-btn nav-active"><i class="fas fa-user-shield"></i> Yönetici</a>
     <a href="takip.html" class="nav-btn nav-passive"><i class="fas fa-chart-line"></i> Hasta Takibi</a>
 </div>
 
-<div class="container">
-    <div id="durumBilgisi" class="durum-bilgi"><i class="fas fa-circle-notch fa-spin"></i> Sistem başlatılıyor...</div>
-
-    <div class="kart">
-        <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-file-medical"></i> Rapor Arşive Ekle</h2>
-        <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="raporHastaAdi" placeholder="Örn: Ahmet Yılmaz"></div>
-        <div class="input-group"><label>Rapor Türü / Bölüm:</label><input type="text" id="raporTuru" placeholder="Örn: Kardiyoloji"></div>
-        <div class="input-group"><label>Rapor Belgesi:</label><input type="file" id="raporDosya" accept="image/*, application/pdf"></div>
-        <button class="btn-turkuaz" onclick="raporKaydet()"><i class="fas fa-upload"></i> Raporu Yükle ve Kaydet</button>
+<div id="pinEkrani">
+    <div class="kart pin-kutu">
+        <h2 style="margin-top:0;"><i class="fas fa-lock" style="color:#00bcd4; font-size:30px; margin-bottom:10px; display:block;"></i> Yetkili Girişi</h2>
+        <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Kayıt ekleme ve silme paneline erişmek için PIN kodunuzu giriniz.</p>
+        
+        <input type="password" id="pinGirdisi" placeholder="PIN Kodu" style="text-align:center; letter-spacing:8px; font-size:20px; font-weight:bold; margin-bottom:15px;" inputmode="numeric" maxlength="4">
+        
+        <button class="btn-turkuaz" onclick="pinKontrol()"><i class="fas fa-sign-in-alt"></i> Panele Gir</button>
+        <div id="pinHata" style="color:#f44336; font-size:13px; margin-top:15px; display:none; font-weight:600;"><i class="fas fa-exclamation-triangle"></i> Hatalı PIN girdiniz!</div>
     </div>
+</div>
 
-    <div class="kart">
-        <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-pills"></i> Yeni İlaç Ekle</h2>
-        <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="ilacHastaAdi" placeholder="Örn: Ayşe Yılmaz"></div>
-        <div class="input-group"><label>İlaç Adı:</label><input type="text" id="ilacAdi" placeholder="Örn: Tansiyon İlacı"></div>
-        <div class="row">
-            <div class="input-group"><label>1 Kutudaki Adet:</label><input type="number" id="kutuAdet" placeholder="28/30"></div>
-            <div class="input-group"><label>Alınan Kutu Sayısı:</label><input type="number" id="kutuSayisi" placeholder="2" value="1"></div>
-        </div>
-        <div class="row">
-            <div class="input-group"><label>Günde Kaç Tane?</label><input type="number" id="gunlukDoz" placeholder="1"></div>
-            <div class="input-group"><label>Başlangıç (GG/AA/YY):</label><input type="tel" id="baslangicTarihi" placeholder="Örn: 01/03/26"></div>
-        </div>
-        <button class="btn-mavi" onclick="ilacKaydet()"><i class="fas fa-save"></i> İlacı Kaydet</button>
-    </div>
+<div id="anaIcerik">
+    <div class="container">
+        <div id="durumBilgisi" class="durum-bilgi"><i class="fas fa-circle-notch fa-spin"></i> Sistem başlatılıyor...</div>
 
-    <div class="kart">
-        <h2 style="text-align:center; font-size:18px; margin-top:0; color:#f44336;"><i class="fas fa-trash-alt"></i> Veri Silme Yönetimi</h2>
-        <h3 style="font-size:15px; color:#00bcd4; border-bottom:1px solid #333; padding-bottom:5px;">Raporlar</h3>
-        <div id="silRaporListesi" style="margin-bottom: 20px;"></div>
-        <h3 style="font-size:15px; color:#3f51b5; border-bottom:1px solid #333; padding-bottom:5px;">İlaçlar</h3>
-        <div id="silIlacListesi"></div>
+        <div class="kart">
+            <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-file-medical"></i> Rapor Arşive Ekle</h2>
+            <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="raporHastaAdi" placeholder="Örn: Ahmet Yılmaz"></div>
+            <div class="input-group"><label>Rapor Türü / Bölüm:</label><input type="text" id="raporTuru" placeholder="Örn: Kardiyoloji"></div>
+            <div class="input-group"><label>Rapor Belgesi:</label><input type="file" id="raporDosya" accept="image/*, application/pdf"></div>
+            <button class="btn-turkuaz" onclick="raporKaydet()"><i class="fas fa-upload"></i> Raporu Yükle ve Kaydet</button>
+        </div>
+
+        <div class="kart">
+            <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-pills"></i> Yeni İlaç Ekle</h2>
+            <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="ilacHastaAdi" placeholder="Örn: Ayşe Yılmaz"></div>
+            <div class="input-group"><label>İlaç Adı:</label><input type="text" id="ilacAdi" placeholder="Örn: Tansiyon İlacı"></div>
+            <div class="row">
+                <div class="input-group"><label>1 Kutudaki Adet:</label><input type="number" id="kutuAdet" placeholder="28/30"></div>
+                <div class="input-group"><label>Alınan Kutu Sayısı:</label><input type="number" id="kutuSayisi" placeholder="2" value="1"></div>
+            </div>
+            <div class="row">
+                <div class="input-group"><label>Günde Kaç Tane?</label><input type="number" id="gunlukDoz" placeholder="1"></div>
+                <div class="input-group"><label>Başlangıç (GG/AA/YY):</label><input type="tel" id="baslangicTarihi" placeholder="Örn: 01/03/26"></div>
+            </div>
+            <button class="btn-mavi" onclick="ilacKaydet()"><i class="fas fa-save"></i> İlacı Kaydet</button>
+        </div>
+
+        <div class="kart">
+            <h2 style="text-align:center; font-size:18px; margin-top:0; color:#f44336;"><i class="fas fa-trash-alt"></i> Veri Silme Yönetimi</h2>
+            <h3 style="font-size:15px; color:#00bcd4; border-bottom:1px solid #333; padding-bottom:5px;">Raporlar</h3>
+            <div id="silRaporListesi" style="margin-bottom: 20px;"></div>
+            <h3 style="font-size:15px; color:#3f51b5; border-bottom:1px solid #333; padding-bottom:5px;">İlaçlar</h3>
+            <div id="silIlacListesi"></div>
+        </div>
     </div>
 </div>
 
@@ -84,29 +103,56 @@
 
     function tokenCoz() { try { return CryptoJS.AES.decrypt(sifreliKasa, gizliPin).toString(CryptoJS.enc.Utf8); } catch(e) { return ""; } }
 
-    // --- YENİ: OTOMATİK TARİH FORMATLAYICI ---
+    // --- PIN KONTROL SİSTEMİ ---
+    const yoneticiPin = "1453";
+
+    window.onload = function() {
+        // Oturum daha önce açılmış mı kontrol et
+        if(sessionStorage.getItem('yoneticiIzni') === 'onaylandi') {
+            sistemiBaslat();
+        } else {
+            // Açılmadıysa kilit ekranını göster
+            document.getElementById('pinEkrani').style.display = 'block';
+        }
+    };
+
+    function pinKontrol() {
+        const girilenPin = document.getElementById('pinGirdisi').value;
+        if(girilenPin === yoneticiPin) {
+            sessionStorage.setItem('yoneticiIzni', 'onaylandi');
+            document.getElementById('pinEkrani').style.display = 'none';
+            sistemiBaslat();
+        } else {
+            document.getElementById('pinHata').style.display = 'block';
+            document.getElementById('pinGirdisi').value = '';
+        }
+    }
+
+    // --- SİSTEMİ BAŞLAT (PIN DOĞRUYSA ÇALIŞIR) ---
+    function sistemiBaslat() {
+        document.getElementById('anaIcerik').style.display = 'flex';
+        
+        // Tarih formatlayıcıyı aktifleştir
+        const b = new Date();
+        const gun = String(b.getDate()).padStart(2, '0');
+        const ay = String(b.getMonth() + 1).padStart(2, '0');
+        const yil = String(b.getFullYear()).slice(-2);
+        tarihInput.value = `${gun}/${ay}/${yil}`;
+        
+        githubVerisiniCek();
+    }
+
+    // --- OTOMATİK TARİH FORMATLAYICI ---
     const tarihInput = document.getElementById('baslangicTarihi');
     tarihInput.addEventListener('input', function(e) {
-        let deger = e.target.value.replace(/\D/g, ''); // Sadece rakamları al
-        if (deger.length > 6) deger = deger.slice(0, 6); // Maksimum 6 rakam (GG+AA+YY)
-        
+        let deger = e.target.value.replace(/\D/g, ''); 
+        if (deger.length > 6) deger = deger.slice(0, 6); 
         let formatli = '';
         if (deger.length > 0) formatli = deger.substring(0, 2);
         if (deger.length > 2) formatli += '/' + deger.substring(2, 4);
         if (deger.length > 4) formatli += '/' + deger.substring(4, 6);
-        
         e.target.value = formatli;
     });
-
-    window.onload = function() {
-        const b = new Date();
-        const gun = String(b.getDate()).padStart(2, '0');
-        const ay = String(b.getMonth() + 1).padStart(2, '0');
-        const yil = String(b.getFullYear()).slice(-2); // Sadece son 2 hane "26"
-        tarihInput.value = `${gun}/${ay}/${yil}`;
-        
-        githubVerisiniCek();
-    };
 
     async function githubVerisiniCek() {
         const token = tokenCoz(); if(!token) return;
@@ -198,14 +244,13 @@
         const kA = parseInt(document.getElementById('kutuAdet').value); const kS = parseInt(document.getElementById('kutuSayisi').value);
         const doz = parseInt(document.getElementById('gunlukDoz').value); 
         
-        // --- YENİ: TARİH PARÇALAYICI ---
-        const tG = document.getElementById('baslangicTarihi').value; // Format: GG/AA/YY
+        const tG = document.getElementById('baslangicTarihi').value; 
         if(!hAd || !iAd || !kA || !kS || !doz || tG.length !== 8) return alert("Lütfen tüm form alanlarını eksiksiz girin.");
         
         const parcalar = tG.split('/');
         const gun = parseInt(parcalar[0]);
-        const ay = parseInt(parcalar[1]) - 1; // JS'de aylar 0'dan başlar
-        const yil = parseInt(parcalar[2]) + 2000; // "26" -> 2026
+        const ay = parseInt(parcalar[1]) - 1; 
+        const yil = parseInt(parcalar[2]) + 2000; 
         
         const gercekTarih = new Date(yil, ay, gun, 12, 0, 0).toISOString();
 
