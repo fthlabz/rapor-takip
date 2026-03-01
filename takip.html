@@ -144,16 +144,21 @@
         });
     }
 
-    // YENİ OKUMA MİMARİSİ
-    async function raporResminiCek(dosyaYolu, mimeType) {
+    // YENİ: Boyut limitini aşan dosyaları çeken sistem
+    async function raporResminiGetir(dosyaYolu) {
         const token = tokenCoz();
         try {
-            const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, { 
+                headers: { 
+                    'Authorization': `Bearer ${token}`, 
+                    'Accept': 'application/vnd.github.v3.raw' // Ham veriyi doğrudan indirir, 1 MB limitini aşar.
+                } 
+            });
             if(res.ok) {
-                const data = await res.json();
-                return `data:${mimeType};base64,${data.content.replace(/\n/g, '')}`;
+                const blob = await res.blob();
+                return URL.createObjectURL(blob);
             }
-        } catch(e) { return null; }
+        } catch(e) { console.error("Resim çekilemedi", e); }
         return null;
     }
 
@@ -162,19 +167,19 @@
         const modal = document.getElementById('raporModal');
         const icerikAlani = document.getElementById('modalIcerikAlani');
         
-        icerikAlani.innerHTML = "<i class='fas fa-spinner fa-spin fa-3x' style='color:#00bcd4;'></i>";
+        icerikAlani.innerHTML = "<i class='fas fa-spinner fa-spin fa-3x' style='color:#00bcd4;'></i><br><span style='margin-top:10px;'>İndiriliyor...</span>";
         modal.style.display = 'flex';
         
-        const resimVerisi = await raporResminiCek(r.dosyaYolu, r.mimeType);
+        const resimURL = await raporResminiGetir(r.dosyaYolu);
 
-        if(resimVerisi) {
+        if(resimURL) {
             if(r.mimeType.includes("image")) {
-                icerikAlani.innerHTML = `<img src="${resimVerisi}" class="modal-icerik">`;
-            } else if (r.mimeType.includes("pdf")) {
-                icerikAlani.innerHTML = `<iframe src="${resimVerisi}" style="width:100%; height:100%; border:none; border-radius:10px;"></iframe>`;
+                icerikAlani.innerHTML = `<img src="${resimURL}" class="modal-icerik">`;
+            } else {
+                icerikAlani.innerHTML = `<iframe src="${resimURL}" style="width:100%; height:100%; border:none; border-radius:10px;"></iframe>`;
             }
         } else {
-            icerikAlani.innerHTML = "<span style='color:red;'>Belge sunucudan indirilemedi.</span>";
+            icerikAlani.innerHTML = "<span style='color:red;'><i class='fas fa-exclamation-triangle'></i> Belge açılamadı.</span>";
         }
     }
 
@@ -182,20 +187,28 @@
 
     async function raporPaylas(globalIndex) {
         const r = sistemVerisi.raporlar[globalIndex];
-        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Paylaşım için dosya hazırlanıyor...";
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Paylaşım için dosya indiriliyor...";
         
         try {
-            const resimVerisi = await raporResminiCek(r.dosyaYolu, r.mimeType);
-            if(!resimVerisi) { alert("Dosya çekilemedi."); return; }
-
-            const res = await fetch(resimVerisi); const blob = await res.blob();
+            // Önce dosyayı internetten telefonun belleğine indirir
+            const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${r.dosyaYolu}`, { 
+                headers: { 'Authorization': `Bearer ${tokenCoz()}`, 'Accept': 'application/vnd.github.v3.raw' } 
+            });
+            if(!res.ok) { document.getElementById('durumBilgisi').innerHTML = "Dosya çekilemedi."; return; }
+            
+            const blob = await res.blob();
             const dosya = new File([blob], r.dosyaAdi, { type: r.mimeType });
             
             document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem hazır.";
             if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
                 await navigator.share({ title: `${r.hastaAdi} Raporu`, text: `Belge Ektedir.`, files: [dosya] });
-            } else { alert("Cihazınız bu formatta doğrudan paylaşımı desteklemiyor."); }
-        } catch(e) { console.log("Paylaşım tamamlandı veya iptal edildi."); document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem tamamlandı."; }
+            } else {
+                alert("Cihazınız bu formatta doğrudan paylaşımı desteklemiyor.");
+            }
+        } catch(e) { 
+            // "Hata oluştu" uyarısını tamamen sildik. Sessizce işlemi bitirir.
+            document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem tamamlandı."; 
+        }
     }
 </script>
 </body>
