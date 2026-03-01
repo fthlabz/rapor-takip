@@ -117,36 +117,62 @@
         } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-times-circle'></i> Senkronizasyon hatası."; }
     }
 
-    function dosyaOku(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); }); }
+    // YENİ: Akıllı Fotoğraf Sıkıştırıcı
+    function resimSikistir(file) {
+        return new Promise((resolve) => {
+            if (!file.type.match(/image.*/)) { // PDF ise sıkıştırma, direkt okut
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width; let height = img.height; const max_size = 1200;
+                    if (width > height && width > max_size) { height *= max_size / width; width = max_size; }
+                    else if (height > max_size) { width *= max_size / height; height = max_size; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // Dosya boyutunu %80 küçültür
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-    // YENİ YÜKLEME MİMARİSİ
     async function raporKaydet() {
         const ad = document.getElementById('raporHastaAdi').value.trim(); const tur = document.getElementById('raporTuru').value.trim();
         const dosyaG = document.getElementById('raporDosya');
         if(!ad || !tur || dosyaG.files.length === 0) return alert("Lütfen tüm alanları doldurup belge seçin.");
         
         const d = dosyaG.files[0]; 
-        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Dosya sunucuya yükleniyor. Bekleyin...";
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Dosya sıkıştırılıyor ve yükleniyor...";
         
         try {
-            const base64Veri = await dosyaOku(d);
+            const base64Veri = await resimSikistir(d);
             const temizBase64 = base64Veri.split(',')[1];
-            const uzanti = d.name.split('.').pop() || 'jpg';
+            // Eğer resimse JPG yap, değilse kendi uzantısını kullan
+            const uzanti = d.type.includes('image') ? 'jpg' : (d.name.split('.').pop() || 'pdf');
             const yeniDosyaAdi = `raporlar/belge_${Date.now()}_${Math.floor(Math.random()*100)}.${uzanti}`;
             const token = tokenCoz();
 
-            // Dosyayı resim olarak ayrı bir klasöre atıyoruz
             const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${yeniDosyaAdi}`, {
                 method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: "Rapor dosyası yüklendi", content: temizBase64 })
             });
 
             if(res.ok) {
-                sistemVerisi.raporlar.push({ id: Date.now(), hastaAdi: ad, tur: tur, dosyaAdi: d.name, mimeType: d.type, dosyaYolu: yeniDosyaAdi });
+                // Raporu asıl listeye işle
+                sistemVerisi.raporlar.push({ id: Date.now(), hastaAdi: ad, tur: tur, dosyaAdi: `rapor.${uzanti}`, mimeType: d.type.includes('image') ? 'image/jpeg' : d.type, dosyaYolu: yeniDosyaAdi });
                 githubVerisiniYaz("Rapor eklendi");
                 document.getElementById('raporHastaAdi').value = ''; document.getElementById('raporTuru').value = ''; document.getElementById('raporDosya').value = '';
             } else { throw new Error("Yükleme reddedildi."); }
-        } catch(e) { document.getElementById('durumBilgisi').innerHTML = `<i class='fas fa-times-circle'></i> Hata: ${e}`; }
+        } catch(e) { document.getElementById('durumBilgisi').innerHTML = `<i class='fas fa-times-circle'></i> Hata oluştu. Lütfen tekrar deneyin.`; }
     }
 
     function ilacKaydet() {
@@ -181,26 +207,17 @@
 
     function ilacSil(i) { if(confirm("İlacı kalıcı olarak silmek istiyor musunuz?")) { sistemVerisi.ilaclar.splice(i, 1); githubVerisiniYaz("İlaç silindi"); } }
     
-    // YENİ SİLME MİMARİSİ (Klasördeki resmi de siler)
     async function raporSil(i) { 
         if(confirm("Raporu kalıcı olarak silmek istiyor musunuz?")) { 
-            const r = sistemVerisi.raporlar[i];
-            const token = tokenCoz();
+            const r = sistemVerisi.raporlar[i]; const token = tokenCoz();
             try {
-                // Önce dosyayı bul
                 const fileRes = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${r.dosyaYolu}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 if(fileRes.ok) {
                     const fileData = await fileRes.json();
-                    // Dosyayı sunucudan sil
-                    await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${r.dosyaYolu}`, {
-                        method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: "Rapor dosyası silindi", sha: fileData.sha })
-                    });
+                    await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${r.dosyaYolu}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: "Dosya silindi", sha: fileData.sha }) });
                 }
             } catch(e) { console.log("Dosya bulunamadı."); }
-            
-            sistemVerisi.raporlar.splice(i, 1); 
-            githubVerisiniYaz("Rapor veritabanından silindi"); 
+            sistemVerisi.raporlar.splice(i, 1); githubVerisiniYaz("Rapor veritabanından silindi"); 
         } 
     }
 </script>
