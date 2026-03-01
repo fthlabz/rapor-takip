@@ -14,29 +14,20 @@
         .nav-active { background: #00bcd4; color: #121212; }
         .nav-passive { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
         .container { width: 100%; max-width: 450px; }
-        
-        /* Hasta Seçici Kutusu */
         .secici-kutu { background-color: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         .secici-kutu label { color: #00bcd4; font-weight: 600; font-size: 14px; }
         select { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 10px; font-size: 16px; outline: none; font-family: 'Poppins', sans-serif; }
-        select option { background-color: #1e1e1e; color: white; }
-
         .kart { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); box-sizing: border-box; }
         .liste-kutu { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; margin-bottom: 15px; color: #ffffff; font-size: 15px; position: relative; }
-        
         .durum-etiketi { font-size: 17px; font-weight: 700; display: block; margin-top: 5px; }
         .yesil { border-left: 5px solid #4caf50; } .kirmizi { border-left: 5px solid #f44336; } .sari { border-left: 5px solid #ffeb3b; }
         .rapor-islem { display: flex; gap: 10px; margin-top: 15px; }
-        
         button { cursor: pointer; transition: all 0.3s ease; border-radius: 8px; font-weight: 600; border: none; }
         button:active { transform: scale(0.95); }
         .btn-ikincil { background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 12px; font-size: 14px; flex: 1; }
         .btn-ikincil:hover { background-color: rgba(255, 255, 255, 0.15); }
-        
         .durum-bilgi { font-size: 13px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.05); color: #00bcd4; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3); }
         h3 { color: #fff; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 0; display:flex; align-items:center; gap:8px;}
-
-        /* --- YENİ EKLENEN: TAM EKRAN RAPOR PENCERESİ (MODAL) --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
         .modal-icerik { max-width: 100%; max-height: 80vh; border-radius: 10px; object-fit: contain; }
         .modal-kapat-btn { margin-top: 25px; background-color: #f44336; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; max-width: 300px; }
@@ -96,7 +87,7 @@
                 if(Array.isArray(pd)) sistemVerisi.ilaclar = pd; else sistemVerisi = pd;
                 document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> Veriler güncel ve yüklendi.";
                 hastaSeciciDoldur();
-            } else if (r.status === 404) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-info-circle'></i> Arşiviniz şu an boş."; }
+            } else if (r.status === 404) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-info-circle'></i> Veritabanı temiz. Kayıt bekleniyor."; }
         } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-exclamation-triangle'></i> Bağlantı hatası."; }
     }
 
@@ -105,17 +96,14 @@
         const hastalar = new Set();
         sistemVerisi.raporlar.forEach(r => hastalar.add(r.hastaAdi));
         sistemVerisi.ilaclar.forEach(i => hastalar.add(i.hastaAdi));
-        
         secici.innerHTML = '<option value="">-- Bir Hasta Seçin --</option>';
         hastalar.forEach(h => { secici.innerHTML += `<option value="${h}">${h}</option>`; });
-        
         listeleriGuncelle();
     }
 
     function listeleriGuncelle() {
         const seciliHasta = document.getElementById('hastaSecici').value;
-        const rL = document.getElementById('raporListesi'); 
-        const iL = document.getElementById('ilacListesi'); 
+        const rL = document.getElementById('raporListesi'); const iL = document.getElementById('ilacListesi'); 
         
         if(!seciliHasta) {
             rL.innerHTML = '<span style="color:#888; font-size:14px;">Lütfen yukarıdan hasta seçin.</span>';
@@ -123,10 +111,9 @@
             return;
         }
 
-        const filtrelenmisRaporlar = sistemVerisi.raporlar.filter(r => r.hastaAdi === seciliHasta);
-        rL.innerHTML = filtrelenmisRaporlar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait rapor bulunamadı.</div>' : '';
-        
-        filtrelenmisRaporlar.forEach((r) => {
+        const fRaporlar = sistemVerisi.raporlar.filter(r => r.hastaAdi === seciliHasta);
+        rL.innerHTML = fRaporlar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait rapor bulunamadı.</div>' : '';
+        fRaporlar.forEach((r) => {
             const globalIndex = sistemVerisi.raporlar.indexOf(r);
             rL.innerHTML += `
                 <div class="liste-kutu" style="border-left: 5px solid #00bcd4;">
@@ -138,20 +125,16 @@
                 </div>`;
         });
 
-        const filtrelenmisIlaclar = sistemVerisi.ilaclar.filter(ilac => ilac.hastaAdi === seciliHasta);
-        iL.innerHTML = filtrelenmisIlaclar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait ilaç bulunamadı.</div>' : '';
-        
+        const fIlaclar = sistemVerisi.ilaclar.filter(ilac => ilac.hastaAdi === seciliHasta);
+        iL.innerHTML = fIlaclar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait ilaç bulunamadı.</div>' : '';
         const bugun = new Date(); bugun.setHours(12,0,0,0);
-        
-        filtrelenmisIlaclar.forEach((ilac) => {
+        fIlaclar.forEach((ilac) => {
             const baslangic = new Date(ilac.baslangicTarihi); baslangic.setHours(12,0,0,0);
             let gecenGun = Math.round((bugun - baslangic) / (1000 * 60 * 60 * 24)); if(gecenGun < 0) gecenGun = 0;
             let kalanHap = ilac.toplamHap - (gecenGun * ilac.gunlukDoz); if (kalanHap < 0) kalanHap = 0;
             const kalanGun = Math.floor(kalanHap / ilac.gunlukDoz);
-            
             const renk = kalanHap === 0 ? 'kirmizi' : (kalanGun <= 3 ? 'sari' : 'yesil');
             const dMetni = kalanHap === 0 ? "<span style='color:#ff5252;'><i class='fas fa-exclamation-circle'></i> BİTTİ! Yenilenmeli</span>" : `<span style='color:#4caf50;'><i class='fas fa-check-circle'></i> ${kalanGun} Gün Kaldı</span>`;
-            
             iL.innerHTML += `
                 <div class="liste-kutu ${renk}">
                     <div style="font-weight:600; font-size:18px;">${ilac.adi}</div>
@@ -161,44 +144,58 @@
         });
     }
 
-    // --- YENİ EKLENEN: MODAL (PENCERE) FONKSİYONLARI ---
-    function raporGoruntule(globalIndex) {
+    // YENİ OKUMA MİMARİSİ
+    async function raporResminiCek(dosyaYolu, mimeType) {
+        const token = tokenCoz();
+        try {
+            const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if(res.ok) {
+                const data = await res.json();
+                return `data:${mimeType};base64,${data.content.replace(/\n/g, '')}`;
+            }
+        } catch(e) { return null; }
+        return null;
+    }
+
+    async function raporGoruntule(globalIndex) {
         const r = sistemVerisi.raporlar[globalIndex]; 
         const modal = document.getElementById('raporModal');
         const icerikAlani = document.getElementById('modalIcerikAlani');
         
-        icerikAlani.innerHTML = ''; // Önceki içeriği temizle
+        icerikAlani.innerHTML = "<i class='fas fa-spinner fa-spin fa-3x' style='color:#00bcd4;'></i>";
+        modal.style.display = 'flex';
         
-        if(r.mimeType.includes("image")) {
-            icerikAlani.innerHTML = `<img src="${r.veri}" class="modal-icerik">`;
-        } else if (r.mimeType.includes("pdf")) {
-            icerikAlani.innerHTML = `<iframe src="${r.veri}" style="width:100%; height:100%; border:none; border-radius:10px;"></iframe>`;
+        const resimVerisi = await raporResminiCek(r.dosyaYolu, r.mimeType);
+
+        if(resimVerisi) {
+            if(r.mimeType.includes("image")) {
+                icerikAlani.innerHTML = `<img src="${resimVerisi}" class="modal-icerik">`;
+            } else if (r.mimeType.includes("pdf")) {
+                icerikAlani.innerHTML = `<iframe src="${resimVerisi}" style="width:100%; height:100%; border:none; border-radius:10px;"></iframe>`;
+            }
+        } else {
+            icerikAlani.innerHTML = "<span style='color:red;'>Belge sunucudan indirilemedi.</span>";
         }
-        
-        modal.style.display = 'flex'; // Pencereyi göster
     }
 
-    function modalKapat() {
-        document.getElementById('raporModal').style.display = 'none'; // Pencereyi gizle
-        document.getElementById('modalIcerikAlani').innerHTML = ''; // RAM'i temizle
-    }
+    function modalKapat() { document.getElementById('raporModal').style.display = 'none'; document.getElementById('modalIcerikAlani').innerHTML = ''; }
 
-    // --- GÜNCELLENEN: PAYLAŞIM FONKSİYONU ---
     async function raporPaylas(globalIndex) {
         const r = sistemVerisi.raporlar[globalIndex];
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Paylaşım için dosya hazırlanıyor...";
+        
         try {
-            const res = await fetch(r.veri); const blob = await res.blob();
+            const resimVerisi = await raporResminiCek(r.dosyaYolu, r.mimeType);
+            if(!resimVerisi) { alert("Dosya çekilemedi."); return; }
+
+            const res = await fetch(resimVerisi); const blob = await res.blob();
             const dosya = new File([blob], r.dosyaAdi, { type: r.mimeType });
             
+            document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem hazır.";
             if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
                 await navigator.share({ title: `${r.hastaAdi} Raporu`, text: `Belge Ektedir.`, files: [dosya] });
-            } else {
-                alert("Cihazınız bu paylaşım formatını desteklemiyor.");
-            }
-        } catch(e) { 
-            // Kullanıcı vazgeçtiğinde fırlatılan hatayı gizliyoruz. Sadece konsola yazar.
-            console.log("Paylaşım iptal edildi veya tamamlandı."); 
-        }
+            } else { alert("Cihazınız bu formatta doğrudan paylaşımı desteklemiyor."); }
+        } catch(e) { console.log("Paylaşım tamamlandı veya iptal edildi."); document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem tamamlandı."; }
     }
 </script>
 </body>
