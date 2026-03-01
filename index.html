@@ -3,449 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistematik Sağlık Takibi</title>
+    <title>Sağlık Yönetimi | Kayıt & Silme</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Modern, Karanlık Mod ve Glasy Tasarım Stilleri */
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #121212;
-            margin: 0; padding: 20px; overflow-x: hidden; color: #e0e0e0;
-            display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
-        }
-        h1, h2 { text-align: center; color: #ffffff; font-weight: 700; margin-bottom: 15px;}
-        .container { width: 100%; max-width: 450px; margin-top: 10px; }
-        .kart {
-            background-color: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px; padding: 25px; margin-bottom: 30px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); box-sizing: border-box;
-        }
+        body { font-family: 'Poppins', sans-serif; background-color: #121212; margin: 0; padding: 20px; overflow-x: hidden; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .nav-bar { width: 100%; max-width: 450px; display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { flex: 1; text-align: center; padding: 15px; border-radius: 12px; font-weight: 600; text-decoration: none; transition: 0.3s; color: #fff; }
+        .nav-active { background: #00bcd4; color: #121212; }
+        .nav-passive { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+        .container { width: 100%; max-width: 450px; }
+        .kart { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); box-sizing: border-box; }
         .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { color: #ffffff; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
-        
-        input[type="text"], input[type="number"], input[type="file"] {
-            background-color: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px;
-            width: 100%; box-sizing: border-box; transition: all 0.3s ease;
-        }
+        input[type="text"], input[type="number"], input[type="file"] { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px; width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
         input:focus { outline: none; border-color: #00bcd4; box-shadow: 0 0 10px rgba(0, 188, 212, 0.5); }
-        input::placeholder { color: rgba(255, 255, 255, 0.3); }
-
-        .row { display: flex; gap: 10px; }
-        .row .input-group { flex: 1; }
-
-        button {
-            width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px;
-            font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: #ffffff; margin-top: 5px;
-        }
+        .row { display: flex; gap: 10px; } .row .input-group { flex: 1; }
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: #ffffff; margin-top: 5px; }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
         button:active { transform: scale(0.98); }
-        
-        .btn-mavi { background-color: #3f51b5; }
-        .btn-turkuaz { background-color: #00bcd4; }
-        .btn-kirmizi { background-color: #f44336; }
-        .btn-ikincil {
-            background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff; padding: 10px; font-size: 13px; width: auto; flex: 1;
-        }
-
-        .liste-kutu {
-            background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 15px; border-radius: 15px; margin-bottom: 15px; color: #ffffff;
-            font-size: 15px; position: relative;
-        }
-        
-        .kisi-etiketi {
-            display: inline-block; background: #3f51b5; font-size: 11px;
-            padding: 4px 10px; border-radius: 8px; font-weight: bold; margin-bottom: 8px;
-        }
-
-        .durum-etiketi { font-size: 17px; font-weight: 700; display: block; margin-top: 5px; }
-        .yesil { border-left: 5px solid #4caf50; } 
-        .kirmizi { border-left: 5px solid #f44336; } 
-        .sari { border-left: 5px solid #ffeb3b; }
-
-        .rapor-islem { display: flex; gap: 10px; margin-top: 10px; }
-        
-        .durum-bilgi {
-            font-size: 13px; margin-bottom: 20px;
-            background-color: rgba(255, 255, 255, 0.05); color: #00bcd4;
-            padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3);
-        }
-        
-        hr { border: 0; height: 1px; background: rgba(255,255,255,0.1); margin: 25px 0; }
+        .btn-mavi { background-color: #3f51b5; } .btn-turkuaz { background-color: #00bcd4; }
+        .btn-kirmizi { background-color: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid rgba(244, 67, 54, 0.3); padding: 10px; font-size: 14px; margin-top: 10px; }
+        .durum-bilgi { font-size: 13px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.05); color: #00bcd4; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 188, 212, 0.3); }
+        .yonetim-satir { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .yonetim-satir:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
+<div class="nav-bar">
+    <a href="index.html" class="nav-btn nav-active"><i class="fas fa-edit"></i> Kayıt & Silme</a>
+    <a href="takip.html" class="nav-btn nav-passive"><i class="fas fa-chart-line"></i> Hasta Takibi</a>
+</div>
+
 <div class="container">
-    <h1>Sağlık Asistanım</h1>
-    <div id="durumBilgisi" class="durum-bilgi">Sistem başlatılıyor...</div>
+    <div id="durumBilgisi" class="durum-bilgi"><i class="fas fa-circle-notch fa-spin"></i> Sistem başlatılıyor...</div>
 
-    <div class="kart glassy">
-        <h2>Rapor Arşive Ekle</h2>
-        <div class="input-group">
-            <label>Hasta Adı Soyadı:</label>
-            <input type="text" id="raporHastaAdi" placeholder="Örn: Ahmet Yılmaz">
-        </div>
-        <div class="input-group">
-            <label>Rapor Türü / Bölüm:</label>
-            <input type="text" id="raporTuru" placeholder="Örn: Kardiyoloji, Dahiliye">
-        </div>
-        <div class="input-group">
-            <label>Rapor Belgesi (Fotoğraf/PDF):</label>
-            <input type="file" id="raporDosya" accept="image/*, application/pdf">
-        </div>
-        <button class="btn-turkuaz" onclick="raporKaydet()">Raporu Kaydet</button>
+    <div class="kart">
+        <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-file-medical"></i> Rapor Arşive Ekle</h2>
+        <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="raporHastaAdi" placeholder="Örn: Ahmet Yılmaz"></div>
+        <div class="input-group"><label>Rapor Türü / Bölüm:</label><input type="text" id="raporTuru" placeholder="Örn: Kardiyoloji"></div>
+        <div class="input-group"><label>Rapor Belgesi:</label><input type="file" id="raporDosya" accept="image/*, application/pdf"></div>
+        <button class="btn-turkuaz" onclick="raporKaydet()"><i class="fas fa-save"></i> Raporu Kaydet</button>
     </div>
 
-    <div class="kart glassy">
-        <h2>Yeni İlaç Ekle</h2>
-        <div class="input-group">
-            <label>Hasta Adı Soyadı:</label>
-            <input type="text" id="ilacHastaAdi" placeholder="Örn: Ayşe Yılmaz">
-        </div>
-        <div class="input-group">
-            <label>İlaç Adı:</label>
-            <input type="text" id="ilacAdi" placeholder="Örn: Tansiyon İlacı">
-        </div>
-        
+    <div class="kart">
+        <h2 style="text-align:center; font-size:18px; margin-top:0;"><i class="fas fa-pills"></i> Yeni İlaç Ekle</h2>
+        <div class="input-group"><label>Hasta Adı Soyadı:</label><input type="text" id="ilacHastaAdi" placeholder="Örn: Ayşe Yılmaz"></div>
+        <div class="input-group"><label>İlaç Adı:</label><input type="text" id="ilacAdi" placeholder="Örn: Tansiyon İlacı"></div>
         <div class="row">
-            <div class="input-group">
-                <label>1 Kutudaki Adet:</label>
-                <input type="number" id="kutuAdet" placeholder="Örn: 28 veya 30">
-            </div>
-            <div class="input-group">
-                <label>Kaç Kutu Alındı?</label>
-                <input type="number" id="kutuSayisi" placeholder="Örn: 2" value="1">
-            </div>
+            <div class="input-group"><label>1 Kutudaki Adet:</label><input type="number" id="kutuAdet" placeholder="28/30"></div>
+            <div class="input-group"><label>Alınan Kutu Sayısı:</label><input type="number" id="kutuSayisi" placeholder="2" value="1"></div>
         </div>
-
         <div class="row">
-            <div class="input-group">
-                <label>Günde Kaç Tane?</label>
-                <input type="number" id="gunlukDoz" placeholder="Örn: 1">
-            </div>
-            <div class="input-group">
-                <label>Başlangıç:</label>
-                <input type="text" id="baslangicTarihi" placeholder="GGAAYYYY (Örn: 17032026)" maxlength="8" inputmode="numeric">
-            </div>
+            <div class="input-group"><label>Günde Kaç Tane?</label><input type="number" id="gunlukDoz" placeholder="1"></div>
+            <div class="input-group"><label>Başlangıç (GGAAYYYY):</label><input type="text" id="baslangicTarihi" maxlength="8" inputmode="numeric"></div>
         </div>
-
-        <button class="btn-mavi" onclick="ilacKaydet()">İlacı Kaydet</button>
+        <button class="btn-mavi" onclick="ilacKaydet()"><i class="fas fa-save"></i> İlacı Kaydet</button>
     </div>
 
-    <div class="kart glassy">
-        <h2>Arşiv ve Takipler</h2>
+    <div class="kart">
+        <h2 style="text-align:center; font-size:18px; margin-top:0; color:#f44336;"><i class="fas fa-trash-alt"></i> Veri Silme Yönetimi</h2>
         
-        <h3 style="color:#00bcd4; font-size:16px; border-bottom:1px solid #333; padding-bottom:5px;">📋 Raporlar</h3>
-        <div id="raporListesi" style="margin-bottom: 25px;"></div>
+        <h3 style="font-size:15px; color:#00bcd4; border-bottom:1px solid #333; padding-bottom:5px;">Raporlar</h3>
+        <div id="silRaporListesi" style="margin-bottom: 20px;"></div>
 
-        <h3 style="color:#3f51b5; font-size:16px; border-bottom:1px solid #333; padding-bottom:5px;">💊 İlaç Sayaçları</h3>
-        <div id="ilacListesi"></div>
+        <h3 style="font-size:15px; color:#3f51b5; border-bottom:1px solid #333; padding-bottom:5px;">İlaçlar</h3>
+        <div id="silIlacListesi"></div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // HAYALET KİLİT MİMARİSİ
-    // ==========================================
     const sifreliKasa = "U2FsdGVkX18YZOh/CEC1BZdGmmN8qEbU7T9VH7rWp2xupmq48rGl09lbWTleQG3CoVl+dKuwnc2nUinI50/Q2A=="; 
     const gizliPin = "1453"; 
-    const githubKullaniciAdi = "fthlabz";
-    const githubRepoAdi = "rapor-takip";
-    const dosyaYolu = "data.json";
+    const githubKullaniciAdi = "fthlabz"; const githubRepoAdi = "rapor-takip"; const dosyaYolu = "data.json";
 
-    let githubDosyaSha = ""; 
-    // Sistematik Veritabanı Yapısı
-    let sistemVerisi = { raporlar: [], ilaclar: [] };
+    let githubDosyaSha = ""; let sistemVerisi = { raporlar: [], ilaclar: [] };
 
-    function tokenCoz() {
-        try {
-            return CryptoJS.AES.decrypt(sifreliKasa, gizliPin).toString(CryptoJS.enc.Utf8);
-        } catch(e) { return ""; }
-    }
+    function tokenCoz() { try { return CryptoJS.AES.decrypt(sifreliKasa, gizliPin).toString(CryptoJS.enc.Utf8); } catch(e) { return ""; } }
 
-    // Tarihi metin kutusuna bugünün tarihini atar (GGAAYYYY)
     window.onload = function() {
-        const bugun = new Date();
-        const d = String(bugun.getDate()).padStart(2, '0');
-        const m = String(bugun.getMonth() + 1).padStart(2, '0');
-        const y = bugun.getFullYear();
-        document.getElementById('baslangicTarihi').value = `${d}${m}${y}`;
-        
+        const b = new Date();
+        document.getElementById('baslangicTarihi').value = `${String(b.getDate()).padStart(2,'0')}${String(b.getMonth()+1).padStart(2,'0')}${b.getFullYear()}`;
         githubVerisiniCek();
     };
 
-    // GitHub'dan veriyi çekme ve formatlama
     async function githubVerisiniCek() {
-        const token = tokenCoz();
-        if(!token) return;
-
-        const url = `https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`;
+        const token = tokenCoz(); if(!token) return;
         try {
-            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.ok) {
-                const data = await response.json();
-                githubDosyaSha = data.sha; 
-                const decodedStr = decodeURIComponent(escape(atob(data.content)));
-                const parsedData = JSON.parse(decodedStr);
-                
-                // Eski sürümde sadece array varsa, yeni objeye geçir.
-                if(Array.isArray(parsedData)) {
-                    sistemVerisi.ilaclar = parsedData;
-                } else {
-                    sistemVerisi = parsedData;
-                }
-                
-                document.getElementById('durumBilgisi').innerText = "✅ Veriler güncel.";
-                listeleriGuncelle();
-            } else if (response.status === 404) {
-                document.getElementById('durumBilgisi').innerText = "ℹ️ Yeni arşiv oluşturulacak.";
-            }
-        } catch (error) { document.getElementById('durumBilgisi').innerText = "❌ Bağlantı hatası."; }
+            const r = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (r.ok) {
+                const data = await r.json(); githubDosyaSha = data.sha; 
+                const pd = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                if(Array.isArray(pd)) sistemVerisi.ilaclar = pd; else sistemVerisi = pd;
+                document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> Bağlantı Hazır. İşlem yapabilirsiniz.";
+                silmeListeleriniGuncelle();
+            } else if (r.status === 404) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-info-circle'></i> Arşiv boş, ilk kaydınızı yapabilirsiniz."; }
+        } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-exclamation-triangle'></i> Bağlantı hatası."; }
     }
 
-    // GitHub'a yazma
-    async function githubVerisiniYaz() {
+    async function githubVerisiniYaz(mesaj="Sistem güncellendi") {
         const token = tokenCoz();
-        const url = `https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`;
-        const icerikBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(sistemVerisi))));
-        
-        document.getElementById('durumBilgisi').innerText = "⏳ Senkronize ediliyor...";
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-sync fa-spin'></i> Buluta kaydediliyor...";
         try {
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Sistem güncellendi", content: icerikBase64, sha: githubDosyaSha || undefined })
+            const r = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, {
+                method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: mesaj, content: btoa(unescape(encodeURIComponent(JSON.stringify(sistemVerisi)))), sha: githubDosyaSha || undefined })
             });
-            if (response.ok) {
-                const data = await response.json();
-                githubDosyaSha = data.content.sha; 
-                document.getElementById('durumBilgisi').innerText = "✅ Başarıyla Kaydedildi.";
+            if (r.ok) {
+                const data = await r.json(); githubDosyaSha = data.content.sha; 
+                document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> Başarıyla Kaydedildi.";
+                silmeListeleriniGuncelle();
             }
-        } catch (error) { document.getElementById('durumBilgisi').innerText = "❌ Senkronizasyon hatası."; }
+        } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-times-circle'></i> Senkronizasyon hatası."; }
     }
 
-    // --- DOSYAYI BASE64'E ÇEVİRME ---
-    function dosyaOku(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
+    function dosyaOku(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); }); }
 
-    // --- RAPOR KAYDETME ---
     async function raporKaydet() {
-        const hastaAdi = document.getElementById('raporHastaAdi').value.trim();
-        const tur = document.getElementById('raporTuru').value.trim();
-        const dosyaGirdisi = document.getElementById('raporDosya');
-
-        if(!hastaAdi || !tur || dosyaGirdisi.files.length === 0) {
-            alert("Lütfen hasta adını, bölümü yazın ve belge seçin.");
-            return;
-        }
-
-        const dosya = dosyaGirdisi.files[0];
-        // Dosya boyutu kontrolü (Maksimum 3MB)
-        if(dosya.size > 3 * 1024 * 1024) {
-            alert("Seçtiğiniz dosya çok büyük. Lütfen 3 MB'dan küçük bir fotoğraf seçin.");
-            return;
-        }
-
-        document.getElementById('durumBilgisi').innerText = "⏳ Belge işleniyor...";
-        const base64Veri = await dosyaOku(dosya);
-
-        const yeniRapor = {
-            id: Date.now(),
-            hastaAdi: hastaAdi,
-            tur: tur,
-            dosyaAdi: dosya.name,
-            mimeType: dosya.type,
-            veri: base64Veri
-        };
-
-        sistemVerisi.raporlar.push(yeniRapor);
-        listeleriGuncelle();
-        githubVerisiniYaz();
-
-        // Formu temizle
-        document.getElementById('raporHastaAdi').value = '';
-        document.getElementById('raporTuru').value = '';
-        document.getElementById('raporDosya').value = '';
+        const ad = document.getElementById('raporHastaAdi').value.trim(); const tur = document.getElementById('raporTuru').value.trim();
+        const dosyaG = document.getElementById('raporDosya');
+        if(!ad || !tur || dosyaG.files.length === 0) return alert("Lütfen tüm alanları doldurup belge seçin.");
+        const d = dosyaG.files[0]; if(d.size > 3*1024*1024) return alert("Dosya boyutu çok büyük (Max 3MB).");
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Belge işleniyor...";
+        sistemVerisi.raporlar.push({ id: Date.now(), hastaAdi: ad, tur: tur, dosyaAdi: d.name, mimeType: d.type, veri: await dosyaOku(d) });
+        githubVerisiniYaz("Rapor eklendi");
+        document.getElementById('raporHastaAdi').value = ''; document.getElementById('raporTuru').value = ''; document.getElementById('raporDosya').value = '';
     }
 
-    // --- İLAÇ KAYDETME (KUSURSUZ MATEMATİK) ---
     function ilacKaydet() {
-        const hastaAdi = document.getElementById('ilacHastaAdi').value.trim();
-        const adi = document.getElementById('ilacAdi').value.trim();
-        const kutuAdet = parseInt(document.getElementById('kutuAdet').value);
-        const kutuSayisi = parseInt(document.getElementById('kutuSayisi').value);
-        const doz = parseInt(document.getElementById('gunlukDoz').value);
-        const tarihGirdisi = document.getElementById('baslangicTarihi').value;
-        
-        if(!hastaAdi || !adi || !kutuAdet || !kutuSayisi || !doz || tarihGirdisi.length !== 8) {
-            alert("Lütfen tüm alanları doldurun ve tarihi 17032026 formatında girin.");
-            return;
-        }
-
-        const gun = parseInt(tarihGirdisi.substring(0, 2));
-        const ay = parseInt(tarihGirdisi.substring(2, 4)) - 1; 
-        const yil = parseInt(tarihGirdisi.substring(4, 8));
-        
-        // Tarihi UTC olarak kaydet ki saat dilimi kayması olmasın
-        const gercekTarih = new Date(yil, ay, gun, 12, 0, 0).toISOString();
-
-        const yeniIlac = {
-            id: Date.now(),
-            hastaAdi: hastaAdi,
-            adi: adi,
-            kutuAdet: kutuAdet,
-            kutuSayisi: kutuSayisi,
-            toplamHap: (kutuAdet * kutuSayisi),
-            gunlukDoz: doz,
-            baslangicTarihi: gercekTarih
-        };
-
-        sistemVerisi.ilaclar.push(yeniIlac);
-        listeleriGuncelle();
-        githubVerisiniYaz(); 
-
-        document.getElementById('ilacHastaAdi').value = '';
-        document.getElementById('ilacAdi').value = '';
-        document.getElementById('kutuAdet').value = '';
-        document.getElementById('kutuSayisi').value = '1';
-        document.getElementById('gunlukDoz').value = '';
+        const hAd = document.getElementById('ilacHastaAdi').value.trim(); const iAd = document.getElementById('ilacAdi').value.trim();
+        const kA = parseInt(document.getElementById('kutuAdet').value); const kS = parseInt(document.getElementById('kutuSayisi').value);
+        const doz = parseInt(document.getElementById('gunlukDoz').value); const tG = document.getElementById('baslangicTarihi').value;
+        if(!hAd || !iAd || !kA || !kS || !doz || tG.length !== 8) return alert("Lütfen formdaki tüm sayıları ve tarihi eksiksiz girin.");
+        const gercekTarih = new Date(parseInt(tG.substring(4,8)), parseInt(tG.substring(2,4))-1, parseInt(tG.substring(0,2)), 12, 0, 0).toISOString();
+        sistemVerisi.ilaclar.push({ id: Date.now(), hastaAdi: hAd, adi: iAd, kutuAdet: kA, kutuSayisi: kS, toplamHap: (kA*kS), gunlukDoz: doz, baslangicTarihi: gercekTarih });
+        githubVerisiniYaz("İlaç eklendi");
+        document.getElementById('ilacHastaAdi').value = ''; document.getElementById('ilacAdi').value = ''; document.getElementById('kutuAdet').value = ''; document.getElementById('kutuSayisi').value = '1'; document.getElementById('gunlukDoz').value = '';
     }
 
-    // --- LİSTELERİ EKRANA ÇİZME ---
-    function listeleriGuncelle() {
-        // Raporları Çiz
-        const raporListesi = document.getElementById('raporListesi');
-        raporListesi.innerHTML = sistemVerisi.raporlar.length === 0 ? '<div style="font-size:13px; color:#888;">Henüz rapor eklenmedi.</div>' : '';
-
-        sistemVerisi.raporlar.forEach((rapor, index) => {
-            const div = document.createElement('div');
-            div.className = 'liste-kutu';
-            div.style.borderLeft = "5px solid #00bcd4";
-            
-            div.innerHTML = `
-                <div class="kisi-etiketi">${rapor.hastaAdi}</div>
-                <div style="font-weight:600; font-size:16px;">${rapor.tur} Raporu</div>
-                <div class="rapor-islem">
-                    <button class="btn-ikincil" onclick="raporGoruntule(${index})">👁️ Görüntüle</button>
-                    <button class="btn-ikincil" onclick="raporPaylas(${index})">📤 Paylaş</button>
-                    <button class="btn-ikincil btn-kirmizi" onclick="raporSil(${index})" style="flex: 0.5;">🗑️</button>
-                </div>
-            `;
-            raporListesi.appendChild(div);
+    function silmeListeleriniGuncelle() {
+        const rList = document.getElementById('silRaporListesi');
+        rList.innerHTML = sistemVerisi.raporlar.length === 0 ? '<span style="color:#888; font-size:12px;">Kayıt yok.</span>' : '';
+        sistemVerisi.raporlar.forEach((r, i) => {
+            rList.innerHTML += `<div class="yonetim-satir">
+                <div><strong style="color:#fff;">${r.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${r.tur}</span></div>
+                <button class="btn-kirmizi" style="width:auto; margin:0;" onclick="raporSil(${i})"><i class="fas fa-trash"></i></button>
+            </div>`;
         });
 
-        // İlaçları Çiz
-        const ilacListesi = document.getElementById('ilacListesi');
-        ilacListesi.innerHTML = sistemVerisi.ilaclar.length === 0 ? '<div style="font-size:13px; color:#888;">Henüz ilaç eklenmedi.</div>' : '';
-
-        const bugun = new Date();
-        bugun.setHours(12,0,0,0); // Günü ortala, gece sapmalarını engeller
-
-        sistemVerisi.ilaclar.forEach((ilac, index) => {
-            const baslangic = new Date(ilac.baslangicTarihi);
-            baslangic.setHours(12,0,0,0);
-            
-            // Matematik: Tam gün farkı
-            let gecenGun = Math.round((bugun - baslangic) / (1000 * 60 * 60 * 24));
-            if(gecenGun < 0) gecenGun = 0; // Gelecek tarih girilmişse henüz başlamamıştır.
-            
-            const kullanilanHap = gecenGun * ilac.gunlukDoz;
-            let kalanHap = ilac.toplamHap - kullanilanHap;
-            if (kalanHap < 0) kalanHap = 0;
-
-            const kalanGun = Math.floor(kalanHap / ilac.gunlukDoz);
-
-            const div = document.createElement('div');
-            
-            if (kalanHap === 0) {
-                div.className = 'liste-kutu kirmizi';
-            } else if (kalanGun <= 3) {
-                div.className = 'liste-kutu sari';
-            } else {
-                div.className = 'liste-kutu yesil';
-            }
-            
-            let durumMetni = (kalanHap === 0) 
-                ? "<span style='color:#ff5252;'>BİTTİ! Yenilenmeli</span>" 
-                : `<span style='color:#4caf50;'>${kalanGun} Gün Kaldı</span>`;
-
-            div.innerHTML = `
-                <div class="kisi-etiketi">${ilac.hastaAdi}</div>
-                <div style="font-weight:600; font-size:16px;">${ilac.adi}</div>
-                <div style="font-size:13px; color:#bbb;">Başlangıç: ${baslangic.toLocaleDateString('tr-TR')}</div>
-                <div style="font-size:13px; color:#bbb;">Adet: ${ilac.kutuSayisi} Kutu (${ilac.toplamHap} Hap)</div>
-                <div class="durum-etiketi">${durumMetni}</div>
-                
-                <button onclick="ilacSil(${index})" class="btn-ikincil" style="margin-top:10px; border-color:#f44336; color:#f44336; width:100%;">Sil</button>
-            `;
-            
-            ilacListesi.appendChild(div);
+        const iList = document.getElementById('silIlacListesi');
+        iList.innerHTML = sistemVerisi.ilaclar.length === 0 ? '<span style="color:#888; font-size:12px;">Kayıt yok.</span>' : '';
+        sistemVerisi.ilaclar.forEach((ilac, i) => {
+            iList.innerHTML += `<div class="yonetim-satir">
+                <div><strong style="color:#fff;">${ilac.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${ilac.adi}</span></div>
+                <button class="btn-kirmizi" style="width:auto; margin:0;" onclick="ilacSil(${i})"><i class="fas fa-trash"></i></button>
+            </div>`;
         });
     }
 
-    // --- SİLME İŞLEMLERİ ---
-    function ilacSil(index) {
-        if(confirm("Bu ilacı silmek istediğinize emin misiniz?")) {
-            sistemVerisi.ilaclar.splice(index, 1);
-            listeleriGuncelle(); githubVerisiniYaz(); 
-        }
-    }
-
-    function raporSil(index) {
-        if(confirm("Bu raporu arşivden kalıcı olarak silmek istediğinize emin misiniz?")) {
-            sistemVerisi.raporlar.splice(index, 1);
-            listeleriGuncelle(); githubVerisiniYaz(); 
-        }
-    }
-
-    // --- RAPOR GÖRÜNTÜLEME VE PAYLAŞMA ---
-    function raporGoruntule(index) {
-        const rapor = sistemVerisi.raporlar[index];
-        const pencere = window.open("");
-        if(rapor.mimeType.includes("image")) {
-            pencere.document.write(`<img src="${rapor.veri}" style="width:100%; height:auto;">`);
-        } else if (rapor.mimeType.includes("pdf")) {
-            pencere.document.write(`<iframe src="${rapor.veri}" style="width:100%; height:100vh; border:none;"></iframe>`);
-        }
-    }
-
-    async function raporPaylas(index) {
-        const rapor = sistemVerisi.raporlar[index];
-        
-        // Base64'ten File nesnesi oluşturma (Paylaşım için)
-        try {
-            const response = await fetch(rapor.veri);
-            const blob = await response.blob();
-            const dosya = new File([blob], rapor.dosyaAdi, { type: rapor.mimeType });
-
-            if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
-                await navigator.share({
-                    title: `${rapor.hastaAdi} - ${rapor.tur} Raporu`,
-                    text: `${rapor.hastaAdi} kişisine ait ${rapor.tur} raporu ektedir.`,
-                    files: [dosya]
-                });
-            } else {
-                alert("Cihazınız doğrudan dosya paylaşımını desteklemiyor. Raporu görüntüleyip indirebilirsiniz.");
-            }
-        } catch(e) {
-            console.error(e);
-            alert("Paylaşım sırasında bir hata oluştu.");
-        }
-    }
+    function ilacSil(i) { if(confirm("İlacı kalıcı olarak silmek istiyor musunuz?")) { sistemVerisi.ilaclar.splice(i, 1); githubVerisiniYaz("İlaç silindi"); } }
+    function raporSil(i) { if(confirm("Raporu kalıcı olarak silmek istiyor musunuz?")) { sistemVerisi.raporlar.splice(i, 1); githubVerisiniYaz("Rapor silindi"); } }
 </script>
-
 </body>
 </html>
