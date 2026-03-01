@@ -17,7 +17,7 @@
         .kart { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); box-sizing: border-box; }
         .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { color: #ffffff; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
-        input[type="text"], input[type="number"], input[type="file"] { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px; width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
+        input[type="text"], input[type="number"], input[type="file"], input[type="tel"] { background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px; color: #ffffff; font-size: 15px; width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
         input:focus { outline: none; border-color: #00bcd4; box-shadow: 0 0 10px rgba(0, 188, 212, 0.5); }
         .row { display: flex; gap: 10px; } .row .input-group { flex: 1; }
         button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: #ffffff; margin-top: 5px; }
@@ -58,7 +58,7 @@
         </div>
         <div class="row">
             <div class="input-group"><label>Günde Kaç Tane?</label><input type="number" id="gunlukDoz" placeholder="1"></div>
-            <div class="input-group"><label>Başlangıç (GGAAYYYY):</label><input type="text" id="baslangicTarihi" maxlength="8" inputmode="numeric"></div>
+            <div class="input-group"><label>Başlangıç (GG/AA/YY):</label><input type="tel" id="baslangicTarihi" placeholder="Örn: 01/03/26"></div>
         </div>
         <button class="btn-mavi" onclick="ilacKaydet()"><i class="fas fa-save"></i> İlacı Kaydet</button>
     </div>
@@ -73,6 +73,9 @@
 </div>
 
 <script>
+    // ==========================================
+    // HAYALET KİLİT MİMARİSİ
+    // ==========================================
     const sifreliKasa = "U2FsdGVkX18YZOh/CEC1BZdGmmN8qEbU7T9VH7rWp2xupmq48rGl09lbWTleQG3CoVl+dKuwnc2nUinI50/Q2A=="; 
     const gizliPin = "1453"; 
     const githubKullaniciAdi = "fthlabz"; const githubRepoAdi = "rapor-takip"; const dosyaYolu = "data.json";
@@ -81,9 +84,27 @@
 
     function tokenCoz() { try { return CryptoJS.AES.decrypt(sifreliKasa, gizliPin).toString(CryptoJS.enc.Utf8); } catch(e) { return ""; } }
 
+    // --- YENİ: OTOMATİK TARİH FORMATLAYICI ---
+    const tarihInput = document.getElementById('baslangicTarihi');
+    tarihInput.addEventListener('input', function(e) {
+        let deger = e.target.value.replace(/\D/g, ''); // Sadece rakamları al
+        if (deger.length > 6) deger = deger.slice(0, 6); // Maksimum 6 rakam (GG+AA+YY)
+        
+        let formatli = '';
+        if (deger.length > 0) formatli = deger.substring(0, 2);
+        if (deger.length > 2) formatli += '/' + deger.substring(2, 4);
+        if (deger.length > 4) formatli += '/' + deger.substring(4, 6);
+        
+        e.target.value = formatli;
+    });
+
     window.onload = function() {
         const b = new Date();
-        document.getElementById('baslangicTarihi').value = `${String(b.getDate()).padStart(2,'0')}${String(b.getMonth()+1).padStart(2,'0')}${b.getFullYear()}`;
+        const gun = String(b.getDate()).padStart(2, '0');
+        const ay = String(b.getMonth() + 1).padStart(2, '0');
+        const yil = String(b.getFullYear()).slice(-2); // Sadece son 2 hane "26"
+        tarihInput.value = `${gun}/${ay}/${yil}`;
+        
         githubVerisiniCek();
     };
 
@@ -97,7 +118,7 @@
                 if(Array.isArray(pd)) sistemVerisi.ilaclar = pd; else sistemVerisi = pd;
                 document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> Bağlantı Hazır. İşlem yapabilirsiniz.";
                 silmeListeleriniGuncelle();
-            } else if (r.status === 404) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-info-circle'></i> Veritabanı temizlendi. İlk kaydınızı yapabilirsiniz."; }
+            } else if (r.status === 404) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-info-circle'></i> Veritabanı temiz. İlk kaydınızı yapabilirsiniz."; }
         } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-exclamation-triangle'></i> Bağlantı hatası."; }
     }
 
@@ -117,7 +138,6 @@
         } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-times-circle'></i> Senkronizasyon hatası."; }
     }
 
-    // YÜKSEK KALİTE FOTOĞRAF SIKIŞTIRICI
     function resimSikistir(file) {
         return new Promise((resolve) => {
             if (!file.type.match(/image.*/)) { 
@@ -131,18 +151,12 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width; let height = img.height; 
-                    
-                    // Maksimum çözünürlüğü 2000 piksele çıkardık (A4 raporlar için yüksek netlik)
-                    const max_size = 2000; 
-                    
+                    let width = img.width; let height = img.height; const max_size = 2000;
                     if (width > height && width > max_size) { height *= max_size / width; width = max_size; }
                     else if (height > max_size) { width *= max_size / height; height = max_size; }
                     canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Kaliteyi %85'e çıkardık (Daha az sıkıştırma, daha net yazılar)
                     resolve(canvas.toDataURL('image/jpeg', 0.85)); 
                 };
                 img.src = e.target.result;
@@ -182,9 +196,19 @@
     function ilacKaydet() {
         const hAd = document.getElementById('ilacHastaAdi').value.trim(); const iAd = document.getElementById('ilacAdi').value.trim();
         const kA = parseInt(document.getElementById('kutuAdet').value); const kS = parseInt(document.getElementById('kutuSayisi').value);
-        const doz = parseInt(document.getElementById('gunlukDoz').value); const tG = document.getElementById('baslangicTarihi').value;
-        if(!hAd || !iAd || !kA || !kS || !doz || tG.length !== 8) return alert("Lütfen formdaki tüm sayıları ve tarihi eksiksiz girin.");
-        const gercekTarih = new Date(parseInt(tG.substring(4,8)), parseInt(tG.substring(2,4))-1, parseInt(tG.substring(0,2)), 12, 0, 0).toISOString();
+        const doz = parseInt(document.getElementById('gunlukDoz').value); 
+        
+        // --- YENİ: TARİH PARÇALAYICI ---
+        const tG = document.getElementById('baslangicTarihi').value; // Format: GG/AA/YY
+        if(!hAd || !iAd || !kA || !kS || !doz || tG.length !== 8) return alert("Lütfen tüm form alanlarını eksiksiz girin.");
+        
+        const parcalar = tG.split('/');
+        const gun = parseInt(parcalar[0]);
+        const ay = parseInt(parcalar[1]) - 1; // JS'de aylar 0'dan başlar
+        const yil = parseInt(parcalar[2]) + 2000; // "26" -> 2026
+        
+        const gercekTarih = new Date(yil, ay, gun, 12, 0, 0).toISOString();
+
         sistemVerisi.ilaclar.push({ id: Date.now(), hastaAdi: hAd, adi: iAd, kutuAdet: kA, kutuSayisi: kS, toplamHap: (kA*kS), gunlukDoz: doz, baslangicTarihi: gercekTarih });
         githubVerisiniYaz("İlaç eklendi");
         document.getElementById('ilacHastaAdi').value = ''; document.getElementById('ilacAdi').value = ''; document.getElementById('kutuAdet').value = ''; document.getElementById('kutuSayisi').value = '1'; document.getElementById('gunlukDoz').value = '';
