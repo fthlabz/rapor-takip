@@ -117,10 +117,10 @@
         } catch (e) { document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-times-circle'></i> Senkronizasyon hatası."; }
     }
 
-    // YENİ: Akıllı Fotoğraf Sıkıştırıcı
+    // YÜKSEK KALİTE FOTOĞRAF SIKIŞTIRICI
     function resimSikistir(file) {
         return new Promise((resolve) => {
-            if (!file.type.match(/image.*/)) { // PDF ise sıkıştırma, direkt okut
+            if (!file.type.match(/image.*/)) { 
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(file);
@@ -131,13 +131,19 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width; let height = img.height; const max_size = 1200;
+                    let width = img.width; let height = img.height; 
+                    
+                    // Maksimum çözünürlüğü 2000 piksele çıkardık (A4 raporlar için yüksek netlik)
+                    const max_size = 2000; 
+                    
                     if (width > height && width > max_size) { height *= max_size / width; width = max_size; }
                     else if (height > max_size) { width *= max_size / height; height = max_size; }
                     canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // Dosya boyutunu %80 küçültür
+                    
+                    // Kaliteyi %85'e çıkardık (Daha az sıkıştırma, daha net yazılar)
+                    resolve(canvas.toDataURL('image/jpeg', 0.85)); 
                 };
                 img.src = e.target.result;
             };
@@ -151,12 +157,11 @@
         if(!ad || !tur || dosyaG.files.length === 0) return alert("Lütfen tüm alanları doldurup belge seçin.");
         
         const d = dosyaG.files[0]; 
-        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Dosya sıkıştırılıyor ve yükleniyor...";
+        document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Dosya yüksek kalitede hazırlanıyor ve yükleniyor...";
         
         try {
             const base64Veri = await resimSikistir(d);
             const temizBase64 = base64Veri.split(',')[1];
-            // Eğer resimse JPG yap, değilse kendi uzantısını kullan
             const uzanti = d.type.includes('image') ? 'jpg' : (d.name.split('.').pop() || 'pdf');
             const yeniDosyaAdi = `raporlar/belge_${Date.now()}_${Math.floor(Math.random()*100)}.${uzanti}`;
             const token = tokenCoz();
@@ -167,7 +172,6 @@
             });
 
             if(res.ok) {
-                // Raporu asıl listeye işle
                 sistemVerisi.raporlar.push({ id: Date.now(), hastaAdi: ad, tur: tur, dosyaAdi: `rapor.${uzanti}`, mimeType: d.type.includes('image') ? 'image/jpeg' : d.type, dosyaYolu: yeniDosyaAdi });
                 githubVerisiniYaz("Rapor eklendi");
                 document.getElementById('raporHastaAdi').value = ''; document.getElementById('raporTuru').value = ''; document.getElementById('raporDosya').value = '';
