@@ -251,36 +251,43 @@
         document.getElementById('ilacHastaAdi').value = ''; document.getElementById('ilacAdi').value = ''; document.getElementById('kutuAdet').value = ''; document.getElementById('kutuSayisi').value = '1'; document.getElementById('gunlukDoz').value = '';
     }
 
-    // --- YENİ EKLENEN: TARİH GÜNCELLEME SİSTEMİ ---
+    // --- YENİLENEN: AKILLI TARİH GÜNCELLEME SİSTEMİ ---
     function ilacTarihGuncelle(i) {
         const ilac = sistemVerisi.ilaclar[i];
         
-        // Önceki başlangıç tarihini GG/AA/YY formatına çevir
+        // Önceki tarihi slashesiz (dümdüz rakam) olarak göster ki silip yazması kolay olsun
         const mevcutTarih = new Date(ilac.baslangicTarihi);
         const g = String(mevcutTarih.getDate()).padStart(2, '0');
         const a = String(mevcutTarih.getMonth() + 1).padStart(2, '0');
         const y = String(mevcutTarih.getFullYear()).slice(-2);
-        const eskiFormat = `${g}/${a}/${y}`;
+        const eskiFormatRakam = `${g}${a}${y}`;
 
-        // Kullanıcıdan yeni tarihi iste
-        const yeniTarihGirdisi = prompt(`"${ilac.adi}" ilacını ECZANEDEN YENİ ALDIĞINIZ tarihi giriniz.\n(GG/AA/YY formatında, aralara / koyarak):`, eskiFormat);
+        // Kullanıcıdan araya işaret koymadan 6 rakam girmesini istiyoruz
+        const yeniTarihGirdisi = prompt(`"${ilac.adi}" ilacını ECZANEDEN YENİ ALDIĞINIZ tarihi giriniz.\n(Araya işaret koymadan 6 rakam tuşlayın, Örn: 050426):`, eskiFormatRakam);
 
-        if (yeniTarihGirdisi && yeniTarihGirdisi.length === 8 && yeniTarihGirdisi.includes('/')) {
-            const parcalar = yeniTarihGirdisi.split('/');
-            if (parcalar.length === 3) {
-                const yeniGun = parseInt(parcalar[0]);
-                const yeniAy = parseInt(parcalar[1]) - 1;
-                const yeniYil = parseInt(parcalar[2]) + 2000;
+        if (yeniTarihGirdisi !== null) {
+            // Kullanıcı araya yanlışlıkla boşluk, slash, nokta vs. koysa bile regex ile hepsini silip sadece rakamları alıyoruz
+            const temizGirdi = yeniTarihGirdisi.replace(/\D/g, ''); 
+
+            if (temizGirdi.length === 6 || temizGirdi.length === 8) {
+                const yeniGun = parseInt(temizGirdi.substring(0, 2));
+                const yeniAy = parseInt(temizGirdi.substring(2, 4)) - 1;
+                let yeniYil;
+                
+                // İster 26 yazsın ister 2026 yazsın, her iki durumu da çözer
+                if (temizGirdi.length === 6) {
+                    yeniYil = parseInt(temizGirdi.substring(4, 6)) + 2000;
+                } else {
+                    yeniYil = parseInt(temizGirdi.substring(4, 8));
+                }
                 
                 // İlacın veritabanındaki başlangıç tarihini direkt değiştir
                 ilac.baslangicTarihi = new Date(yeniYil, yeniAy, yeniGun, 12, 0, 0).toISOString();
                 
                 githubVerisiniYaz(`"${ilac.adi}" hak ediş tarihi güncellendi`);
             } else {
-                alert("Lütfen tarihi GG/AA/YY şeklinde doğru yazdığınızdan emin olun.");
+                alert("Lütfen tarihi doğru uzunlukta rakam olarak giriniz. Örn: 050426");
             }
-        } else if(yeniTarihGirdisi !== null) {
-            alert("Lütfen tarihi GG/AA/YY şeklinde eksiksiz giriniz.");
         }
     }
 
@@ -297,7 +304,6 @@
         const iList = document.getElementById('silIlacListesi');
         iList.innerHTML = sistemVerisi.ilaclar.length === 0 ? '<span style="color:#888; font-size:12px;">Kayıt yok.</span>' : '';
         sistemVerisi.ilaclar.forEach((ilac, i) => {
-            // İlaç satırına "Tarih Yenile" butonu eklendi
             iList.innerHTML += `<div class="yonetim-satir">
                 <div style="flex:1;"><strong style="color:#fff;">${ilac.hastaAdi}</strong> <br><span style="font-size:12px; color:#aaa;">${ilac.adi}</span></div>
                 <div style="display:flex;">
