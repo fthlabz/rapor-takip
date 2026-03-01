@@ -12,7 +12,6 @@
         
         .container { width: 100%; max-width: 450px; }
         
-        /* Yeni Şık Ana Başlık */
         .ana-baslik { text-align: center; font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 25px; display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; }
         
         .secici-kutu { background-color: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
@@ -147,7 +146,7 @@
             
             const bGun = String(bitisTarihi.getDate()).padStart(2, '0');
             const bAy = String(bitisTarihi.getMonth() + 1).padStart(2, '0');
-            const bYil = String(bitisTarihi.getFullYear()).slice(-2); // Yılı iki hane yapar (Örn: 26)
+            const bYil = String(bitisTarihi.getFullYear()).slice(-2); 
             const formatliBitisTarihi = `${bGun}/${bAy}/${bYil}`;
 
             let renk = 'yesil';
@@ -211,6 +210,7 @@
 
     function modalKapat() { document.getElementById('raporModal').style.display = 'none'; document.getElementById('modalIcerikAlani').innerHTML = ''; }
 
+    // --- PAYLAŞIM METNİ GÜNCELLENDİ ---
     async function raporPaylas(globalIndex) {
         const r = sistemVerisi.raporlar[globalIndex];
         document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Paylaşım için dosya indiriliyor...";
@@ -226,7 +226,12 @@
             
             document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem hazır.";
             if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
-                await navigator.share({ title: `${r.hastaAdi} Raporu`, text: `Belge Ektedir.`, files: [dosya] });
+                // Burada başlık ve metin dinamik hale getirildi. Hangi raporsa o yazacak.
+                await navigator.share({ 
+                    title: `${r.hastaAdi} - ${r.tur} Raporu`, 
+                    text: `${r.hastaAdi} isimli hastaya ait ${r.tur} Raporu ektedir.`, 
+                    files: [dosya] 
+                });
             } else {
                 alert("Cihazınız bu formatta doğrudan paylaşımı desteklemiyor.");
             }
