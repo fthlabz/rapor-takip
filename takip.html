@@ -56,7 +56,7 @@
     </div>
 
     <div class="kart" style="border-left: 4px solid #3f51b5;">
-        <h3><i class="fas fa-capsules" style="color:#3f51b5;"></i> İlaç Sayaçları</h3>
+        <h3><i class="fas fa-capsules" style="color:#3f51b5;"></i> İlaç Bitiş Tarihleri</h3>
         <div id="ilacListesi"><span style="color:#888; font-size:14px;">Lütfen yukarıdan hasta seçin.</span></div>
     </div>
 </div>
@@ -127,14 +127,43 @@
 
         const fIlaclar = sistemVerisi.ilaclar.filter(ilac => ilac.hastaAdi === seciliHasta);
         iL.innerHTML = fIlaclar.length === 0 ? '<div style="font-size:13px; color:#888;">Bu hastaya ait ilaç bulunamadı.</div>' : '';
-        const bugun = new Date(); bugun.setHours(12,0,0,0);
+        
+        const bugun = new Date(); 
+        bugun.setHours(12,0,0,0);
+
         fIlaclar.forEach((ilac) => {
-            const baslangic = new Date(ilac.baslangicTarihi); baslangic.setHours(12,0,0,0);
-            let gecenGun = Math.round((bugun - baslangic) / (1000 * 60 * 60 * 24)); if(gecenGun < 0) gecenGun = 0;
-            let kalanHap = ilac.toplamHap - (gecenGun * ilac.gunlukDoz); if (kalanHap < 0) kalanHap = 0;
-            const kalanGun = Math.floor(kalanHap / ilac.gunlukDoz);
-            const renk = kalanHap === 0 ? 'kirmizi' : (kalanGun <= 3 ? 'sari' : 'yesil');
-            const dMetni = kalanHap === 0 ? "<span style='color:#ff5252;'><i class='fas fa-exclamation-circle'></i> BİTTİ! Yenilenmeli</span>" : `<span style='color:#4caf50;'><i class='fas fa-check-circle'></i> ${kalanGun} Gün Kaldı</span>`;
+            // Düz Hesap: Bitiş Tarihi Matematiksel Hesabı
+            const baslangic = new Date(ilac.baslangicTarihi); 
+            baslangic.setHours(12,0,0,0);
+            
+            const toplamKullanimGunu = Math.ceil(ilac.toplamHap / ilac.gunlukDoz);
+            
+            const bitisTarihi = new Date(baslangic);
+            bitisTarihi.setDate(bitisTarihi.getDate() + toplamKullanimGunu);
+            
+            // Tarihi formatla: GG/AA/YYYY
+            const bGun = String(bitisTarihi.getDate()).padStart(2, '0');
+            const bAy = String(bitisTarihi.getMonth() + 1).padStart(2, '0');
+            const bYil = bitisTarihi.getFullYear();
+            const formatliBitisTarihi = `${bGun}/${bAy}/${bYil}`;
+
+            // Renk ve Metin Belirleme
+            let renk = 'yesil';
+            let dMetni = `<span style='color:#4caf50;'><i class='fas fa-calendar-check'></i> Bitiş: ${formatliBitisTarihi}</span>`;
+
+            if (bugun >= bitisTarihi) {
+                renk = 'kirmizi';
+                dMetni = `<span style='color:#ff5252;'><i class='fas fa-exclamation-circle'></i> Bitti (${formatliBitisTarihi})</span>`;
+            } else {
+                // Bitmesine 3 veya daha az gün kaldıysa sarı uyarı yap (opsiyonel)
+                const kalanMs = bitisTarihi - bugun;
+                const kalanGun = Math.round(kalanMs / (1000 * 60 * 60 * 24));
+                if(kalanGun <= 3) {
+                    renk = 'sari';
+                    dMetni = `<span style='color:#ffeb3b;'><i class='fas fa-calendar-check'></i> Bitiş: ${formatliBitisTarihi}</span>`;
+                }
+            }
+            
             iL.innerHTML += `
                 <div class="liste-kutu ${renk}">
                     <div style="font-weight:600; font-size:18px;">${ilac.adi}</div>
@@ -144,14 +173,13 @@
         });
     }
 
-    // YENİ: Boyut limitini aşan dosyaları çeken sistem
     async function raporResminiGetir(dosyaYolu) {
         const token = tokenCoz();
         try {
             const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${dosyaYolu}`, { 
                 headers: { 
                     'Authorization': `Bearer ${token}`, 
-                    'Accept': 'application/vnd.github.v3.raw' // Ham veriyi doğrudan indirir, 1 MB limitini aşar.
+                    'Accept': 'application/vnd.github.v3.raw' 
                 } 
             });
             if(res.ok) {
@@ -190,7 +218,6 @@
         document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-spinner fa-spin'></i> Paylaşım için dosya indiriliyor...";
         
         try {
-            // Önce dosyayı internetten telefonun belleğine indirir
             const res = await fetch(`https://api.github.com/repos/${githubKullaniciAdi}/${githubRepoAdi}/contents/${r.dosyaYolu}`, { 
                 headers: { 'Authorization': `Bearer ${tokenCoz()}`, 'Accept': 'application/vnd.github.v3.raw' } 
             });
@@ -206,7 +233,6 @@
                 alert("Cihazınız bu formatta doğrudan paylaşımı desteklemiyor.");
             }
         } catch(e) { 
-            // "Hata oluştu" uyarısını tamamen sildik. Sessizce işlemi bitirir.
             document.getElementById('durumBilgisi').innerHTML = "<i class='fas fa-check-circle'></i> İşlem tamamlandı."; 
         }
     }
